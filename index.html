@@ -738,30 +738,36 @@
     }
 
     function ejecutarPost(payload, waUrl) {
+      // 1. Enviamos los datos en segundo plano a Google Sheets y Barra
       fetch(URL_APPS_SCRIPT, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-      }).then(function() {
-        alert("⚡ ¡Comanda #" + payload.orderId + " enviada a la barra!\nTe abriremos WhatsApp para confirmar.");
-        window.open(waUrl, "_blank");
-        pedido = [];
-        refrescarBarra();
-        cerrarModalCarrito();
-        document.getElementById('btnEnviar').innerText = "Mandar a Barra ⚡";
-        document.getElementById('btnEnviar').disabled = false;
-        document.getElementById('cliFoto').value = "";
-      }).catch(function() {
-        alert("Comanda enviada a la barra.");
-        window.open(waUrl, "_blank");
-        pedido = [];
-        refrescarBarra();
-        cerrarModalCarrito();
-        document.getElementById('btnEnviar').innerText = "Mandar a Barra ⚡";
-        document.getElementById('btnEnviar').disabled = false;
       });
+
+      // 2. Limpiamos carrito de inmediato
+      pedido = [];
+      refrescarBarra();
+      if (document.getElementById('cliFoto')) document.getElementById('cliFoto').value = "";
+
+      // 3. Mostramos ventana de éxito sin bloqueos de navegador
+      var cont = document.getElementById('listaCarrito');
+      cont.innerHTML = `
+        <div style="text-align:center; padding: 25px 10px;">
+          <div style="font-size: 3rem; margin-bottom: 10px;">⚡</div>
+          <h2 style="color:var(--neon); margin-bottom: 8px;">¡Comanda #${payload.orderId} Recibida!</h2>
+          <p style="color:#fff; font-size: 0.9rem; margin-bottom: 20px;">Tu pedido ya está en la pantalla de la barra.</p>
+          <a href="${waUrl}" target="_blank" style="display:block; background:#25D366; color:#fff; text-decoration:none; padding:14px; border-radius:12px; font-weight:bold; font-size:1rem; box-shadow: 0 4px 15px rgba(37,211,102,0.4);">
+            Confirmar pedido en WhatsApp 💬
+          </a>
+        </div>
+      `;
+
+      // Ocultamos los campos del formulario y el botón de enviar
+      document.querySelector('.clear-cart-link').style.display = "none";
+      document.getElementById('cliMesa').style.display = "none";
+      document.getElementById('cliNombre').style.display = "none";
+      document.getElementById('cliTel').style.display = "none";
+      document.getElementById('btnEnviar').style.display = "none";
     }
-  </script>
-</body>
-</html>
