@@ -429,7 +429,7 @@
       <button class="clear-cart-link" onclick="vaciarComanda()">🗑️ Vaciar comanda completa</button>
 
       <div style="margin-top: 6px;">
-        <input type="text" id="cliMesa" class="input-field" placeholder="Mesa o Dirección de entrega (Ej. Mesa 4, Barra o Calle Hidalgo #10)" required>
+        <input type="text" id="cliMesa" class="input-field" placeholder="Mesa o Entrega (Ej. Mesa 4 o Barra)" required>
         <input type="text" id="cliNombre" class="input-field" placeholder="Tu Nombre completo" required>
         <input type="tel" id="cliTel" class="input-field" placeholder="WhatsApp (10 dígitos)" required>
       </div>
@@ -446,8 +446,9 @@
     var prodTemporal = null;
     var claveReemplazo = "";
     var URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxQUX7jFGctp62DWIBKmv4WoVzYevuwttfLSeYHNi70n8MheIUGFm5-qhj8Gs8kIvsqkA/exec";
+    var WHATSAPP_BARRA = "525571766659"; // Tu número configurado
 
-    // 0. Autocompletar mesa desde la URL (Ejemplo: ?mesa=4 o ?mesa=Barra)
+    // Autocompletar mesa desde la URL (Ejemplo: ?mesa=4 o ?mesa=Barra)
     window.addEventListener('DOMContentLoaded', function() {
       var params = new URLSearchParams(window.location.search);
       var mesaParam = params.get('mesa');
@@ -493,28 +494,22 @@
     function guardarPersonalizacion() {
       if (!prodTemporal) return;
       
-      // 1. Marca de cerveza (selección única)
       var brandEl = document.querySelector('input[name="marca"]:checked');
       var m = brandEl ? brandEl.value : "Victoria";
 
-      // 2. Preparaciones seleccionadas (múltiples con checkbox)
       var prepsMarcadas = [];
       document.querySelectorAll('input[name="prep"]:checked').forEach(function(el) {
         prepsMarcadas.push(el.value);
       });
       var textoPrep = prepsMarcadas.length > 0 ? prepsMarcadas.join(" + ") : "Al tiempo";
 
-      // 3. Escarchados seleccionados (múltiples con checkbox)
       var escMarcados = [];
       document.querySelectorAll('input[name="escarchado"]:checked').forEach(function(el) {
         escMarcados.push(el.value);
       });
       var textoEsc = escMarcados.length > 0 ? " • " + escMarcados.join(" + ") : "";
 
-      // 4. Notas extra
       var n = document.getElementById('optNotas').value.trim();
-
-      // Construcción del detalle final
       var detalle = m + " • " + textoPrep + textoEsc + (n ? " (" + n + ")" : "");
       var qtyPrevia = 1;
 
@@ -689,7 +684,7 @@
       var nombre = document.getElementById('cliNombre').value.trim();
       var tel = document.getElementById('cliTel').value.trim();
 
-      if (!mesa || !nombre || !tel) return alert("Por favor llena Mesa/Dirección, Nombre y WhatsApp.");
+      if (!mesa || !nombre || !tel) return alert("Por favor llena Mesa/Lugar, Nombre y WhatsApp.");
 
       var btn = document.getElementById('btnEnviar');
       btn.innerText = "Enviando comanda a barra...";
@@ -697,8 +692,10 @@
 
       var orderId = "VHS-" + Math.floor(1000 + Math.random() * 9000);
       var itemsArr = [];
+      var itemsTextoWA = [];
       for (var j = 0; j < pedido.length; j++) {
         itemsArr.push(pedido[j].qty + "x " + pedido[j].nombre + " [" + pedido[j].detalle + "]");
+        itemsTextoWA.push("• *" + pedido[j].qty + "x* " + pedido[j].nombre + " (" + pedido[j].detalle + ")");
       }
 
       var payload = {
@@ -713,27 +710,42 @@
         imageBase64: null
       };
 
+      // Preparar mensaje para WhatsApp
+      var textoWhatsApp = "⚡ *NUEVA COMANDA - VHS BAR & GRILL* ⚡\n" +
+                          "------------------------------\n" +
+                          "📍 *Lugar:* " + mesa + "\n" +
+                          "👤 *Cliente:* " + nombre + "\n" +
+                          "📱 *Teléfono:* " + tel + "\n" +
+                          "🔖 *Folio:* #" + orderId + "\n" +
+                          "------------------------------\n" +
+                          "📝 *DETALLE:*\n" + itemsTextoWA.join("\n") + "\n" +
+                          "------------------------------\n" +
+                          "💰 *TOTAL:* $" + totalPesos + " MXN";
+
+      var waUrl = "https://api.whatsapp.com/send?phone=" + WHATSAPP_BARRA + "&text=" + encodeURIComponent(textoWhatsApp);
+
       var fileInp = document.getElementById('cliFoto');
       if (fileInp.files && fileInp.files[0]) {
         var r = new FileReader();
         r.onload = function(e) {
           payload.imageBase64 = e.target.result;
-          ejecutarPost(payload);
+          ejecutarPost(payload, waUrl);
         };
         r.readAsDataURL(fileInp.files[0]);
       } else {
-        ejecutarPost(payload);
+        ejecutarPost(payload, waUrl);
       }
     }
 
-    function ejecutarPost(payload) {
+    function ejecutarPost(payload, waUrl) {
       fetch(URL_APPS_SCRIPT, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       }).then(function() {
-        alert("⚡ ¡Comanda #" + payload.orderId + " enviada a la barra!\nMesa/Entrega: " + payload.mesa);
+        alert("⚡ ¡Comanda #" + payload.orderId + " enviada a la barra!\nTe abriremos WhatsApp para confirmar.");
+        window.open(waUrl, "_blank");
         pedido = [];
         refrescarBarra();
         cerrarModalCarrito();
@@ -741,7 +753,8 @@
         document.getElementById('btnEnviar').disabled = false;
         document.getElementById('cliFoto').value = "";
       }).catch(function() {
-        alert("Comanda registrada.");
+        alert("Comanda enviada a la barra.");
+        window.open(waUrl, "_blank");
         pedido = [];
         refrescarBarra();
         cerrarModalCarrito();
