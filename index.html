@@ -19,7 +19,7 @@
 
     body {
       background-color: var(--bg);
-      background-image: linear-gradient(rgba(3, 8, 20, 0.72), rgba(3, 8, 20, 0.92)), url('fondo.jpg');
+      background-image: linear-gradient(rgba(3, 8, 20, 0.72), rgba(3, 8, 20, 0.92)), url('fondo.jpg'), url('fondo-vhs.jpg.jpg');
       background-size: cover;
       background-position: center top;
       background-attachment: fixed;
@@ -446,6 +446,20 @@
     var prodTemporal = null;
     var claveReemplazo = "";
     var URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxQUX7jFGctp62DWIBKmv4WoVzYevuwttfLSeYHNi70n8MheIUGFm5-qhj8Gs8kIvsqkA/exec";
+
+    // 0. Autocompletar mesa desde la URL (Ejemplo: ?mesa=4 o ?mesa=Barra)
+    window.addEventListener('DOMContentLoaded', function() {
+      var params = new URLSearchParams(window.location.search);
+      var mesaParam = params.get('mesa');
+      if (mesaParam) {
+        var inputMesa = document.getElementById('cliMesa');
+        if (inputMesa) {
+          inputMesa.value = "Mesa " + mesaParam;
+          inputMesa.readOnly = true;
+          inputMesa.style.opacity = "0.75";
+        }
+      }
+    });
 
     function cambiarPestana(categoria, boton) {
       var btns = document.querySelectorAll('.pill-btn');
