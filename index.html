@@ -65,15 +65,13 @@
     .pill-btn.active { background: rgba(0, 242, 255, 0.2); border-color: var(--neon); color: var(--neon); }
 
     .catalog {
-  position: relative;
-  z-index: 10;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
 
     .card {
       background: var(--card-bg);
@@ -93,17 +91,14 @@
     .price { font-size: 1rem; font-weight: bold; color: var(--neon); }
 
     .btn-add {
-  position: relative;
-  z-index: 20;
-  touch-action: manipulation;
-  background: rgba(0, 242, 255, 0.15);
-  border: 1px solid var(--neon);
-  color: var(--neon);
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-weight: bold;
-  cursor: pointer;
-}
+      background: rgba(0, 242, 255, 0.15);
+      border: 1px solid var(--neon);
+      color: var(--neon);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+    }
     .btn-add:active { background: var(--neon); color: #000; }
 
     .cart-bar {
@@ -434,7 +429,7 @@
       <button class="clear-cart-link" onclick="vaciarComanda()">🗑️ Vaciar comanda completa</button>
 
       <div style="margin-top: 6px;">
-        <input type="text" id="cliMesa" class="input-field" placeholder="Mesa o Entrega (Ej. Mesa 4 o Barra)" required>
+        <input type="text" id="cliMesa" class="input-field" placeholder="Mesa o Dirección de entrega (Ej. Mesa 4, Barra o Calle Hidalgo #10)" required>
         <input type="text" id="cliNombre" class="input-field" placeholder="Tu Nombre completo" required>
         <input type="tel" id="cliTel" class="input-field" placeholder="WhatsApp (10 dígitos)" required>
       </div>
@@ -451,9 +446,8 @@
     var prodTemporal = null;
     var claveReemplazo = "";
     var URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxQUX7jFGctp62DWIBKmv4WoVzYevuwttfLSeYHNi70n8MheIUGFm5-qhj8Gs8kIvsqkA/exec";
-    var WHATSAPP_BARRA = "525571766659"; // Tu número configurado
 
-    // Autocompletar mesa desde la URL (Ejemplo: ?mesa=4 o ?mesa=Barra)
+    // 0. Autocompletar mesa desde la URL (Ejemplo: ?mesa=4 o ?mesa=Barra)
     window.addEventListener('DOMContentLoaded', function() {
       var params = new URLSearchParams(window.location.search);
       var mesaParam = params.get('mesa');
@@ -499,22 +493,28 @@
     function guardarPersonalizacion() {
       if (!prodTemporal) return;
       
+      // 1. Marca de cerveza (selección única)
       var brandEl = document.querySelector('input[name="marca"]:checked');
       var m = brandEl ? brandEl.value : "Victoria";
 
+      // 2. Preparaciones seleccionadas (múltiples con checkbox)
       var prepsMarcadas = [];
       document.querySelectorAll('input[name="prep"]:checked').forEach(function(el) {
         prepsMarcadas.push(el.value);
       });
       var textoPrep = prepsMarcadas.length > 0 ? prepsMarcadas.join(" + ") : "Al tiempo";
 
+      // 3. Escarchados seleccionados (múltiples con checkbox)
       var escMarcados = [];
       document.querySelectorAll('input[name="escarchado"]:checked').forEach(function(el) {
         escMarcados.push(el.value);
       });
       var textoEsc = escMarcados.length > 0 ? " • " + escMarcados.join(" + ") : "";
 
+      // 4. Notas extra
       var n = document.getElementById('optNotas').value.trim();
+
+      // Construcción del detalle final
       var detalle = m + " • " + textoPrep + textoEsc + (n ? " (" + n + ")" : "");
       var qtyPrevia = 1;
 
@@ -689,7 +689,7 @@
       var nombre = document.getElementById('cliNombre').value.trim();
       var tel = document.getElementById('cliTel').value.trim();
 
-      if (!mesa || !nombre || !tel) return alert("Por favor llena Mesa/Lugar, Nombre y WhatsApp.");
+      if (!mesa || !nombre || !tel) return alert("Por favor llena Mesa/Dirección, Nombre y WhatsApp.");
 
       var btn = document.getElementById('btnEnviar');
       btn.innerText = "Enviando comanda a barra...";
@@ -697,10 +697,8 @@
 
       var orderId = "VHS-" + Math.floor(1000 + Math.random() * 9000);
       var itemsArr = [];
-      var itemsTextoWA = [];
       for (var j = 0; j < pedido.length; j++) {
         itemsArr.push(pedido[j].qty + "x " + pedido[j].nombre + " [" + pedido[j].detalle + "]");
-        itemsTextoWA.push("• *" + pedido[j].qty + "x* " + pedido[j].nombre + " (" + pedido[j].detalle + ")");
       }
 
       var payload = {
@@ -715,64 +713,42 @@
         imageBase64: null
       };
 
-      // Preparar mensaje para WhatsApp
-      var textoWhatsApp = "⚡ *NUEVA COMANDA - VHS BAR & GRILL* ⚡\n" +
-                          "------------------------------\n" +
-                          "📍 *Lugar:* " + mesa + "\n" +
-                          "👤 *Cliente:* " + nombre + "\n" +
-                          "📱 *Teléfono:* " + tel + "\n" +
-                          "🔖 *Folio:* #" + orderId + "\n" +
-                          "------------------------------\n" +
-                          "📝 *DETALLE:*\n" + itemsTextoWA.join("\n") + "\n" +
-                          "------------------------------\n" +
-                          "💰 *TOTAL:* $" + totalPesos + " MXN";
-
-      var waUrl = "https://wa.me/" + WHATSAPP_BARRA + "?text=" + encodeURIComponent(textoWhatsApp);
-
       var fileInp = document.getElementById('cliFoto');
       if (fileInp.files && fileInp.files[0]) {
         var r = new FileReader();
         r.onload = function(e) {
           payload.imageBase64 = e.target.result;
-          ejecutarPost(payload, waUrl);
+          ejecutarPost(payload);
         };
         r.readAsDataURL(fileInp.files[0]);
       } else {
-        ejecutarPost(payload, waUrl);
+        ejecutarPost(payload);
       }
     }
 
-    function ejecutarPost(payload, waUrl) {
-      // 1. Enviamos los datos en segundo plano a Google Sheets y Barra
+    function ejecutarPost(payload) {
       fetch(URL_APPS_SCRIPT, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
+      }).then(function() {
+        alert("⚡ ¡Comanda #" + payload.orderId + " enviada a la barra!\nMesa/Entrega: " + payload.mesa);
+        pedido = [];
+        refrescarBarra();
+        cerrarModalCarrito();
+        document.getElementById('btnEnviar').innerText = "Mandar a Barra ⚡";
+        document.getElementById('btnEnviar').disabled = false;
+        document.getElementById('cliFoto').value = "";
+      }).catch(function() {
+        alert("Comanda registrada.");
+        pedido = [];
+        refrescarBarra();
+        cerrarModalCarrito();
+        document.getElementById('btnEnviar').innerText = "Mandar a Barra ⚡";
+        document.getElementById('btnEnviar').disabled = false;
       });
-
-      // 2. Limpiamos carrito de inmediato
-      pedido = [];
-      refrescarBarra();
-      if (document.getElementById('cliFoto')) document.getElementById('cliFoto').value = "";
-
-      // 3. Mostramos ventana de éxito sin bloqueos de navegador
-      var cont = document.getElementById('listaCarrito');
-      cont.innerHTML = `
-        <div style="text-align:center; padding: 25px 10px;">
-          <div style="font-size: 3rem; margin-bottom: 10px;">⚡</div>
-          <h2 style="color:var(--neon); margin-bottom: 8px;">¡Comanda #${payload.orderId} Recibida!</h2>
-          <p style="color:#fff; font-size: 0.9rem; margin-bottom: 20px;">Tu pedido ya está en la pantalla de la barra.</p>
-          <a href="${waUrl}" target="_blank" style="display:block; background:#25D366; color:#fff; text-decoration:none; padding:14px; border-radius:12px; font-weight:bold; font-size:1rem; box-shadow: 0 4px 15px rgba(37,211,102,0.4);">
-            Confirmar pedido en WhatsApp 💬
-          </a>
-        </div>
-      `;
-
-      // Ocultamos los campos del formulario y el botón de enviar
-      document.querySelector('.clear-cart-link').style.display = "none";
-      document.getElementById('cliMesa').style.display = "none";
-      document.getElementById('cliNombre').style.display = "none";
-      document.getElementById('cliTel').style.display = "none";
-      document.getElementById('btnEnviar').style.display = "none";
     }
+  </script>
+</body>
+</html>
