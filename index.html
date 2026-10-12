@@ -65,13 +65,15 @@
     .pill-btn.active { background: rgba(0, 242, 255, 0.2); border-color: var(--neon); color: var(--neon); }
 
     .catalog {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 0 20px;
-    }
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
 
     .card {
       background: var(--card-bg);
@@ -91,14 +93,17 @@
     .price { font-size: 1rem; font-weight: bold; color: var(--neon); }
 
     .btn-add {
-      background: rgba(0, 242, 255, 0.15);
-      border: 1px solid var(--neon);
-      color: var(--neon);
-      padding: 8px 14px;
-      border-radius: 10px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+  position: relative;
+  z-index: 20;
+  touch-action: manipulation;
+  background: rgba(0, 242, 255, 0.15);
+  border: 1px solid var(--neon);
+  color: var(--neon);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
     .btn-add:active { background: var(--neon); color: #000; }
 
     .cart-bar {
