@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VHS BAR & GRILL • Menú & Comandas</title>
+  <style>
+    :root {
+      --neon: #00f2ff;
+      --bg: #030814;
+      --card-bg: rgba(5, 14, 28, 0.9);
+      --border: rgba(0, 242, 255, 0.3);
+      --text: #f0faff;
+      --text-muted: #8aa6b8;
+      --danger: #ff4d6d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: var(--bg);
+      background-image: linear-gradient(rgba(3, 8, 20, 0.72), rgba(3, 8, 20, 0.92)), url('fondo.jpg');
+      background-size: cover;
+      background-position: center top;
+      background-attachment: fixed;
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 120px;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      background: rgba(3, 8, 20, 0.95);
+      border-bottom: 1px solid var(--neon);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-group { display: flex; align-items: center; gap: 12px; }
+    .brand-logo-img { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--neon); object-fit: cover; }
+    .brand-text { font-size: 1.2rem; font-weight: bold; color: #fff; letter-spacing: 2px; }
+    .status-tag { font-size: 0.75rem; color: var(--neon); font-weight: bold; }
+
+    .hero { padding: 24px 20px 14px; max-width: 860px; margin: 0 auto; }
+    .hero-sub { font-size: 0.75rem; color: var(--neon); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+    .hero-title { font-size: 1.8rem; color: #fff; margin-bottom: 8px; }
+    .hero-desc { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 18px; }
+
+    .pills { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; scrollbar-width: none; }
+    .pill-btn {
+      flex-shrink: 0;
+      background: rgba(5, 14, 28, 0.85);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 9px 18px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .pill-btn.active { background: rgba(0, 242, 255, 0.2); border-color: var(--neon); color: var(--neon); }
+
+    .catalog {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-thumb { width: 100%; height: 150px; object-fit: cover; display: block; }
+    .card-body { padding: 14px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
+    .card-body h3 { font-size: 0.95rem; margin-bottom: 5px; color: #fff; }
+    .card-body p { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px; }
+
+    .card-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; }
+    .price { font-size: 1rem; font-weight: bold; color: var(--neon); }
+
+    .btn-add {
+      background: rgba(0, 242, 255, 0.15);
+      border: 1px solid var(--neon);
+      color: var(--neon);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-add:active { background: var(--neon); color: #000; }
+
+    .cart-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      max-width: 820px;
+      margin: 0 auto;
+      background: rgba(4, 12, 26, 0.95);
+      border: 1px solid var(--neon);
+      border-radius: 16px;
+      padding: 12px 20px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 80;
+      cursor: pointer;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      justify-content: center;
+      align-items: flex-end;
+      z-index: 100;
+    }
+
+    .modal-sheet {
+      background: #050f20;
+      border: 1px solid var(--neon);
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 520px;
+      padding: 20px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .modal-title { color: var(--neon); font-weight: bold; }
+    .modal-label { font-size: 0.75rem; color: var(--neon); font-weight: bold; margin: 12px 0 6px; }
+
+    .grid-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .opt-box { background: rgba(255,255,255,0.05); padding: 9px; border-radius: 8px; font-size: 0.8rem; display: flex; gap: 8px; cursor: pointer; align-items: center; }
+    .opt-box input { accent-color: var(--neon); }
+
+    .input-field {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px;
+      color: #fff;
+      margin-bottom: 10px;
+      outline: none;
+      font-size: 0.85rem;
+    }
+    .input-field:focus { border-color: var(--neon); }
+
+    .cart-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      gap: 10px;
+    }
+
+    .edit-opt-btn {
+      background: none;
+      border: 1px solid rgba(0, 242, 255, 0.35);
+      color: var(--neon);
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 5px;
+      display: inline-block;
+      font-weight: bold;
+    }
+
+    .actions-box { display: flex; align-items: center; gap: 8px; }
+    .stepper { display: flex; align-items: center; gap: 5px; }
+    
+    .btn-step {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-step:active { background: var(--neon); color: #000; }
+
+    .btn-delete {
+      background: rgba(255, 77, 109, 0.15);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .clear-cart-link {
+      background: none;
+      border: 1px dashed rgba(255, 77, 109, 0.4);
+      color: var(--danger);
+      font-size: 0.75rem;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 0 14px;
+      display: inline-block;
+      font-weight: bold;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--neon);
+      color: #000;
+      border: none;
+      padding: 13px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 0.92rem;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn-submit:active { opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="brand-group">
+      <img src="logo-vhs.jpg" onerror="this.onerror=null; this.src='logo-vhs.jpg.jpg';" alt="VHS" class="brand-logo-img">
+      <div class="brand-text">VHS</div>
+    </div>
+    <div class="status-tag">Comanda Activa</div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-sub">Bar & Grill • Rock Station</div>
+    <h1 class="hero-title">VHS BAR & GRILL</h1>
+    <p class="hero-desc">Pide directo desde tu mesa sin esperar. Cervezas ultra frías escarchadas, coctelería y grill al momento.</p>
+
+    <div class="pills">
+      <button class="pill-btn active" onclick="cambiarPestana('chelas', this)">⚡ Side A: Chelas</button>
+      <button class="pill-btn" onclick="cambiarPestana('tragos', this)">🍸 Side B: Tragos</button>
+      <button class="pill-btn" onclick="cambiarPestana('grill', this)">🍔 Bonus: Grill</button>
+    </div>
+  </header>
+
+  <main class="catalog">
+    <!-- Chelas -->
+    <div class="card item-chelas">
+      <img src="https://images.pexels.com/photos/1552630/pexels-photo-1552630.jpeg?auto=compress&cs=tinysrgb&w=600" class="card-thumb" alt="">
+      <div class="card-body">
+        <div>
+          <h3>Cerveza Media (Individual)</h3>
+          <p>Elige tu marca favorita y el escarchado con sal y limón.</p>
+        </div>
+        <div class="card-footer">
+          <div class="price">$55 MXN</div>
+          <button class="btn-add" onclick="abrirPersonalizar('Cerveza Media', 55, '')">+ Opciones</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card item-chelas">
+      <img src="https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=500&auto=format&fit=crop&q=60" class="card-thumb" alt="">
+      <div class="card-body">
+        <div>
+          <h3>Tarro VHS / Michelada (1L)</h3>
+          <p>Un litro con salsas de la casa o sal y limón a elegir.</p>
+        </div>
+        <div class="card-footer">
+          <div class="price">$110 MXN</div>
+          <button class="btn-add" onclick="abrirPersonalizar('Tarro VHS 1L', 110, '')">+ Opciones</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card item-chelas">
+      <img src="https://images.unsplash.com/photo-1584225064785-c62a8b43d148?w=500&auto=format&fit=crop&q=60" class="card-thumb" alt="">
+      <div class="card-body">
+        <div>
+          <h3>Cubeta 5 Chelas</h3>
+          <p>En hielera con hielo bien frío para la mesa.</p>
+        </div>
+        <div class="card-footer">
+          <div class="price">$260 MXN</div>
+          <button class="btn-add" onclick="abrirPersonalizar('Cubeta 5 Chelas', 260, '')">+ Opciones</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tragos -->
+    <div class="card item-tragos" style="display: none;">
+      <img src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=500&auto=format&fit=crop&q=60" class="card-thumb" alt="">
+      <div class="card-body">
+        <div>
+          <h3>Electric Blue Gin & Tonic</h3>
+          <p>Ginebra, curaçao azul eléctrico y tónica fría.</p>
+        </div>
+        <div class="card-footer">
+          <div class="price">$130 MXN</div>
+          <button class="btn-add" onclick="agregarAlPedido('Electric Blue Gin', 130, 'Trago de Autor', 1, false)">+ Pedir</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card item-tragos" style="display: none;">
+      <img src="https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=500&auto=format&fit=crop&q=60" class="card-thumb" alt="">
+      <div class="card-body">
+        <div>
+          <h3>Mezcalita Ahumada Maracuyá</h3>
+          <p>Mezcal artesanal con sal de gusano.</p>
+        </div>
+        <div class="card-footer">
+          <div class="price">$145 MXN</div>
+          <button class="btn-add" onclick="agregarAlPedido('Mezcalita Ahumada', 145, 'Trago de Autor', 1, false)">+ Pedir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grill -->
+    <div class="card item-grill" style="display: none;">
+      <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=60" class="card-thumb" alt="">
+      <div class="card-body">
+        <div>
+          <h3>VHS Smash Burger Doble</h3>
+          <p>Doble carne, queso cheddar y papas fritas.</p>
+        </div>
+        <div class="card-footer">
+          <div class="price">$165 MXN</div>
+          <button class="btn-add" onclick="agregarAlPedido('VHS Smash Burger', 165, 'Cocina', 1, false)">+ Pedir</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card item-grill" style="display: none;">
+      <img src="https://images.pexels.com/photos/2338407/pexels-photo-2338407.jpeg?auto=compress&cs=tinysrgb&w=600" class="card-thumb" alt="">
+      <div class="card-body">
+        <div>
+          <h3>Alitas Rock & BBQ (10 pzas)</h3>
+          <p>Bañadas en salsa BBQ con cerveza negra.</p>
+        </div>
+        <div class="card-footer">
+          <div class="price">$150 MXN</div>
+          <button class="btn-add" onclick="agregarAlPedido('Alitas Rock BBQ', 150, 'Cocina', 1, false)">+ Pedir</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Barra flotante de carrito -->
+  <div class="cart-bar" id="cartBar" onclick="abrirModalCarrito()">
+    <div>
+      <strong id="cartCount">0 ítems</strong>
+      <span id="cartTotal" style="color:var(--neon); margin-left:10px;">Total: $0 MXN</span>
+    </div>
+    <div style="background:var(--neon); color:#000; padding:6px 14px; border-radius:8px; font-weight:bold;">Ver Comanda ⚡</div>
+  </div>
+
+  <!-- Modal de Opciones / Preparados -->
+  <div class="modal" id="modalOpciones">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 id="modalOptTitulo" class="modal-title">PERSONALIZAR</h3>
+        <button onclick="cerrarModalOpciones()" style="background:none; border:none; color:var(--neon); font-size:1.5rem; cursor:pointer;">✕</button>
+      </div>
+
+      <p class="modal-label">1. Marca de Cerveza</p>
+      <div class="grid-options">
+        <label class="opt-box"><input type="radio" name="marca" value="Victoria" checked> Victoria</label>
+        <label class="opt-box"><input type="radio" name="marca" value="Corona"> Corona</label>
+        <label class="opt-box"><input type="radio" name="marca" value="Corona Cero"> Corona Cero</label>
+        <label class="opt-box"><input type="radio" name="marca" value="León"> León</label>
+        <label class="opt-box"><input type="radio" name="marca" value="Pacífico"> Pacífico</label>
+        <label class="opt-box"><input type="radio" name="marca" value="XX Lager"> XX Lager</label>
+        <label class="opt-box"><input type="radio" name="marca" value="Tecate Light"> Tecate Light</label>
+        <label class="opt-box"><input type="radio" name="marca" value="Tecate 0.0"> Tecate 0.0</label>
+      </div>
+
+      <p class="modal-label">2. Preparación Base (Elige 1 o varias)</p>
+      <div class="grid-options">
+        <label class="opt-box"><input type="checkbox" name="prep" value="Sola / Fría"> Sola / Fría</label>
+        <label class="opt-box"><input type="checkbox" name="prep" value="Sal y Limón" checked> Sal y Limón</label>
+        <label class="opt-box"><input type="checkbox" name="prep" value="Michelada"> Michelada</label>
+        <label class="opt-box"><input type="checkbox" name="prep" value="Chamoy/Tajín"> Chamoy/Tajín</label>
+      </div>
+
+      <p class="modal-label">3. Escarchado Adicional (Opcional)</p>
+      <div class="grid-options">
+        <label class="opt-box"><input type="checkbox" name="escarchado" value="Con Ajonjolí"> Con Ajonjolí</label>
+        <label class="opt-box"><input type="checkbox" name="escarchado" value="Chamoy Mango"> Chamoy Mango</label>
+        <label class="opt-box"><input type="checkbox" name="escarchado" value="Poco Hielo"> Poco Hielo</label>
+        <label class="opt-box"><input type="checkbox" name="escarchado" value="Vaso con Hielo Aparte"> Hielo Aparte</label>
+      </div>
+
+      <p class="modal-label">4. Especificación para Barra (Opcional)</p>
+      <input type="text" id="optNotas" class="input-field" placeholder="Ej. Bien helada, ajonjolí tostado, más limón...">
+
+      <button class="btn-submit" onclick="guardarPersonalizacion()">Agregar a la comanda ⚡</button>
+    </div>
+  </div>
+
+  <!-- Modal de Comanda Final -->
+  <div class="modal" id="modalCarrito">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3 class="modal-title">TU COMANDA</h3>
+        <button onclick="cerrarModalCarrito()" style="background:none; border:none; color:var(--neon); font-size:1.5rem; cursor:pointer;">✕</button>
+      </div>
+
+      <div id="listaCarrito"></div>
+
+      <button class="clear-cart-link" onclick="vaciarComanda()">🗑️ Vaciar comanda completa</button>
+
+      <div style="margin-top: 6px;">
+        <input type="text" id="cliMesa" class="input-field" placeholder="Mesa o Dirección de entrega (Ej. Mesa 4, Barra o Calle Hidalgo #10)" required>
+        <input type="text" id="cliNombre" class="input-field" placeholder="Tu Nombre completo" required>
+        <input type="tel" id="cliTel" class="input-field" placeholder="WhatsApp (10 dígitos)" required>
+      </div>
+
+      <p style="font-size:0.75rem; color:var(--neon); font-weight:bold; margin-bottom:4px;">Comprobante de Pago / Foto (Opcional):</p>
+      <input type="file" id="cliFoto" accept="image/*" class="input-field" style="padding:6px;">
+
+      <button class="btn-submit" id="btnEnviar" onclick="enviarAAppsScript()">Mandar a Barra ⚡</button>
+    </div>
+  </div>
+
+  <script>
+    var pedido = [];
+    var prodTemporal = null;
+    var claveReemplazo = "";
+    var URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxQUX7jFGctp62DWIBKmv4WoVzYevuwttfLSeYHNi70n8MheIUGFm5-qhj8Gs8kIvsqkA/exec";
+
+    function cambiarPestana(categoria, boton) {
+      var btns = document.querySelectorAll('.pill-btn');
+      for (var i = 0; i < btns.length; i++) { btns[i].classList.remove('active'); }
+      boton.classList.add('active');
+
+      var ch = document.querySelectorAll('.item-chelas');
+      for (var a = 0; a < ch.length; a++) { ch[a].style.display = (categoria === 'chelas') ? 'flex' : 'none'; }
+
+      var tr = document.querySelectorAll('.item-tragos');
+      for (var b = 0; b < tr.length; b++) { tr[b].style.display = (categoria === 'tragos') ? 'flex' : 'none'; }
+
+      var gr = document.querySelectorAll('.item-grill');
+      for (var c = 0; c < gr.length; c++) { gr[c].style.display = (categoria === 'grill') ? 'flex' : 'none'; }
+    }
+
+    function abrirPersonalizar(nombre, precio, claveActual) {
+      prodTemporal = { nombre: nombre, precio: precio };
+      claveReemplazo = claveActual || "";
+      document.getElementById('modalOptTitulo').innerText = (claveActual ? "MODIFICAR: " : "PERSONALIZAR: ") + nombre.toUpperCase();
+      document.getElementById('optNotas').value = "";
+      document.getElementById('modalOpciones').style.display = 'flex';
+    }
+
+    function cerrarModalOpciones() {
+      document.getElementById('modalOpciones').style.display = 'none';
+      prodTemporal = null;
+      claveReemplazo = "";
+    }
+
+    function guardarPersonalizacion() {
+      if (!prodTemporal) return;
+      
+      // 1. Marca de cerveza (selección única)
+      var brandEl = document.querySelector('input[name="marca"]:checked');
+      var m = brandEl ? brandEl.value : "Victoria";
+
+      // 2. Preparaciones seleccionadas (múltiples con checkbox)
+      var prepsMarcadas = [];
+      document.querySelectorAll('input[name="prep"]:checked').forEach(function(el) {
+        prepsMarcadas.push(el.value);
+      });
+      var textoPrep = prepsMarcadas.length > 0 ? prepsMarcadas.join(" + ") : "Al tiempo";
+
+      // 3. Escarchados seleccionados (múltiples con checkbox)
+      var escMarcados = [];
+      document.querySelectorAll('input[name="escarchado"]:checked').forEach(function(el) {
+        escMarcados.push(el.value);
+      });
+      var textoEsc = escMarcados.length > 0 ? " • " + escMarcados.join(" + ") : "";
+
+      // 4. Notas extra
+      var n = document.getElementById('optNotas').value.trim();
+
+      // Construcción del detalle final
+      var detalle = m + " • " + textoPrep + textoEsc + (n ? " (" + n + ")" : "");
+      var qtyPrevia = 1;
+
+      if (claveReemplazo) {
+        for (var i = 0; i < pedido.length; i++) {
+          if (pedido[i].clave === claveReemplazo) {
+            qtyPrevia = pedido[i].qty;
+            pedido.splice(i, 1);
+            break;
+          }
+        }
+      }
+
+      agregarAlPedido(prodTemporal.nombre, prodTemporal.precio, detalle, qtyPrevia, true);
+      cerrarModalOpciones();
+      if (claveReemplazo) { dibujarListaCarrito(); }
+    }
+
+    function agregarAlPedido(nombre, precio, detalle, cantidad, esPersonalizable) {
+      var qty = cantidad || 1;
+      var clave = nombre + "_" + detalle;
+      var item = null;
+
+      for (var i = 0; i < pedido.length; i++) {
+        if (pedido[i].clave === clave) {
+          item = pedido[i];
+          break;
+        }
+      }
+
+      if (item) {
+        item.qty += qty;
+      } else {
+        pedido.push({
+          clave: clave,
+          nombre: nombre,
+          precio: precio,
+          detalle: detalle,
+          qty: qty,
+          personalizable: (esPersonalizable === true)
+        });
+      }
+      refrescarBarra();
+    }
+
+    function refrescarBarra() {
+      var totalItems = 0;
+      var totalPesos = 0;
+      for (var i = 0; i < pedido.length; i++) {
+        totalItems += pedido[i].qty;
+        totalPesos += (pedido[i].precio * pedido[i].qty);
+      }
+
+      var bar = document.getElementById('cartBar');
+      if (totalItems > 0) {
+        bar.style.display = 'flex';
+        document.getElementById('cartCount').innerText = totalItems + " ítem(s)";
+        document.getElementById('cartTotal').innerText = "Total: $" + totalPesos + " MXN";
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
+    function abrirModalCarrito() {
+      dibujarListaCarrito();
+      document.getElementById('modalCarrito').style.display = 'flex';
+    }
+
+    function cerrarModalCarrito() {
+      document.getElementById('modalCarrito').style.display = 'none';
+    }
+
+    function vaciarComanda() {
+      if (confirm("¿Seguro que quieres vaciar toda la comanda?")) {
+        pedido = [];
+        refrescarBarra();
+        cerrarModalCarrito();
+      }
+    }
+
+    function dibujarListaCarrito() {
+      var cont = document.getElementById('listaCarrito');
+      cont.innerHTML = "";
+
+      if (pedido.length === 0) {
+        cont.innerHTML = "<p style='color:#8aa6b8; padding:15px 0;'>La comanda está vacía.</p>";
+        return;
+      }
+
+      for (var i = 0; i < pedido.length; i++) {
+        (function(index) {
+          var item = pedido[index];
+          var row = document.createElement('div');
+          row.className = "cart-row";
+
+          var left = document.createElement('div');
+          left.style.flex = "1";
+          
+          var editBtn = item.personalizable ? '<button class="edit-opt-btn" onclick="editarItem(' + index + ')">✏️ Cambiar preparado</button>' : '';
+
+          left.innerHTML = '<div style="font-weight:bold; color:#fff;">' + item.nombre + '</div>' +
+                           '<div style="font-size:0.75rem; color:#8aa6b8; margin:2px 0;">' + item.detalle + '</div>' +
+                           '<div style="color:#00f2ff; font-size:0.8rem; font-weight:bold;">$' + (item.precio * item.qty) + ' MXN ($' + item.precio + ' c/u)</div>' +
+                           editBtn;
+
+          var right = document.createElement('div');
+          right.className = "actions-box";
+
+          var stepper = document.createElement('div');
+          stepper.className = "stepper";
+
+          var btnMinus = document.createElement('button');
+          btnMinus.className = "btn-step";
+          btnMinus.innerText = "−";
+          btnMinus.onclick = function() {
+            item.qty--;
+            if (item.qty <= 0) pedido.splice(index, 1);
+            refrescarBarra();
+            dibujarListaCarrito();
+          };
+
+          var num = document.createElement('span');
+          num.innerText = item.qty;
+          num.style.cssText = "font-weight:bold; width:16px; text-align:center;";
+
+          var btnPlus = document.createElement('button');
+          btnPlus.className = "btn-step";
+          btnPlus.innerText = "+";
+          btnPlus.onclick = function() {
+            item.qty++;
+            refrescarBarra();
+            dibujarListaCarrito();
+          };
+
+          stepper.appendChild(btnMinus);
+          stepper.appendChild(num);
+          stepper.appendChild(btnPlus);
+
+          var btnDel = document.createElement('button');
+          btnDel.className = "btn-delete";
+          btnDel.innerText = "🗑️";
+          btnDel.title = "Quitar producto";
+          btnDel.onclick = function() {
+            pedido.splice(index, 1);
+            refrescarBarra();
+            dibujarListaCarrito();
+          };
+
+          right.appendChild(stepper);
+          right.appendChild(btnDel);
+
+          row.appendChild(left);
+          row.appendChild(right);
+          cont.appendChild(row);
+        })(i);
+      }
+    }
+
+    function editarItem(idx) {
+      var it = pedido[idx];
+      abrirPersonalizar(it.nombre, it.precio, it.clave);
+    }
+
+    function enviarAAppsScript() {
+      var totalPesos = 0;
+      for (var i = 0; i < pedido.length; i++) {
+        totalPesos += (pedido[i].precio * pedido[i].qty);
+      }
+      if (totalPesos === 0) return alert("Agrega algo al pedido primero.");
+
+      var mesa = document.getElementById('cliMesa').value.trim();
+      var nombre = document.getElementById('cliNombre').value.trim();
+      var tel = document.getElementById('cliTel').value.trim();
+
+      if (!mesa || !nombre || !tel) return alert("Por favor llena Mesa/Dirección, Nombre y WhatsApp.");
+
+      var btn = document.getElementById('btnEnviar');
+      btn.innerText = "Enviando comanda a barra...";
+      btn.disabled = true;
+
+      var orderId = "VHS-" + Math.floor(1000 + Math.random() * 9000);
+      var itemsArr = [];
+      for (var j = 0; j < pedido.length; j++) {
+        itemsArr.push(pedido[j].qty + "x " + pedido[j].nombre + " [" + pedido[j].detalle + "]");
+      }
+
+      var payload = {
+        orderId: orderId,
+        mesa: mesa,
+        cliente: nombre,
+        telefono: tel,
+        resumenPedido: itemsArr.join(" | "),
+        total: totalPesos,
+        lat: null,
+        lng: null,
+        imageBase64: null
+      };
+
+      var fileInp = document.getElementById('cliFoto');
+      if (fileInp.files && fileInp.files[0]) {
+        var r = new FileReader();
+        r.onload = function(e) {
+          payload.imageBase64 = e.target.result;
+          ejecutarPost(payload);
+        };
+        r.readAsDataURL(fileInp.files[0]);
+      } else {
+        ejecutarPost(payload);
+      }
+    }
+
+    function ejecutarPost(payload) {
+      fetch(URL_APPS_SCRIPT, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).then(function() {
+        alert("⚡ ¡Comanda #" + payload.orderId + " enviada a la barra!\nMesa/Entrega: " + payload.mesa);
+        pedido = [];
+        refrescarBarra();
+        cerrarModalCarrito();
+        document.getElementById('btnEnviar').innerText = "Mandar a Barra ⚡";
+        document.getElementById('btnEnviar').disabled = false;
+        document.getElementById('cliFoto').value = "";
+      }).catch(function() {
+        alert("Comanda registrada.");
+        pedido = [];
+        refrescarBarra();
+        cerrarModalCarrito();
+        document.getElementById('btnEnviar').innerText = "Mandar a Barra ⚡";
+        document.getElementById('btnEnviar').disabled = false;
+      });
+    }
+  </script>
+</body>
+</html>
