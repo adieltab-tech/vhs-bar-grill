@@ -82,6 +82,7 @@
       flex-direction: column;
       justify-content: space-between;
       box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      transition: all 0.3s ease;
     }
 
     .order-top {
@@ -99,7 +100,14 @@
       color: var(--neon);
     }
 
-    .order-time { font-size: 0.75rem; color: var(--text-muted); }
+    .order-time {
+      font-size: 0.8rem;
+      color: #00ffaa;
+      font-weight: bold;
+      background: rgba(0, 255, 170, 0.1);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
 
     .client-info {
       font-size: 0.82rem;
@@ -133,10 +141,10 @@
       background: rgba(0, 255, 170, 0.15);
       border: 1px solid var(--ok);
       color: var(--ok);
-      padding: 6px 12px;
-      border-radius: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
       cursor: pointer;
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       font-weight: bold;
     }
     .btn-done:hover { background: var(--ok); color: #000; }
@@ -168,11 +176,10 @@
   </main>
 
   <script>
-    // Enlace a tu Web App de Google Apps Script (el mismo que procesa los pedidos)
     var URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxQUX7jFGctp62DWIBKmv4WoVzYevuwttfLSeYHNi70n8MheIUGFm5-qhj8Gs8kIvsqkA/exec";
     var pedidosGuardados = [];
+    var comandasEntregadas = {};
 
-    // Reproducir un tono beep cuando entre una comanda nueva
     function reproducirAlerta() {
       try {
         var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -180,34 +187,51 @@
         var gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.frequency.value = 880; // Tono A5
+        osc.frequency.value = 880;
         osc.type = "sine";
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.35);
       } catch (e) {
-        console.log("Audio no habilitado aún por interacción");
+        console.log("Audio en espera de interacción");
       }
+    }
+
+    // Formatear la fecha/hora en formato legible (Ej. 08:35 PM)
+    function limpiarHora(fechaStr) {
+      if (!fechaStr) return "";
+      try {
+        var d = new Date(fechaStr);
+        if (!isNaN(d.getTime())) {
+          return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
+        }
+      } catch (e) {}
+      return String(fechaStr).substring(11, 16) || String(fechaStr);
     }
 
     function cargarComandas() {
       var d = new Date();
       document.getElementById('lastCheck').innerText = "Actualizado: " + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-      // Consulta GET al script de Google Sheets
       fetch(URL_APPS_SCRIPT + "?action=getOrders")
         .then(function(res) { return res.json(); })
         .then(function(data) {
           if (Array.isArray(data)) {
-            if (data.length > pedidosGuardados.length && pedidosGuardados.length > 0) {
+            // Filtrar las comandas que el usuario ya marcó como entregadas en esta sesión
+            var pendientes = data.filter(function(p) {
+              var id = p.orderId || (p.mesa + "_" + p.fecha);
+              return !comandasEntregadas[id];
+            });
+
+            if (pendientes.length > pedidosGuardados.length && pedidosGuardados.length > 0) {
               reproducirAlerta();
             }
-            pedidosGuardados = data;
-            dibujarComandas(data);
+            pedidosGuardados = pendientes;
+            dibujarComandas(pendientes);
           }
         })
         .catch(function(err) {
-          console.log("Consultando o esperando datos...", err);
+          console.log("Esperando datos...", err);
         });
     }
 
@@ -220,19 +244,23 @@
         return;
       }
 
-      pedidos.slice().reverse().forEach(function(p, idx) {
+      pedidos.slice().reverse().forEach(function(p) {
+        var orderIdUnico = p.orderId || (p.mesa + "_" + p.fecha);
         var card = document.createElement('div');
         card.className = "order-card";
+        card.id = "card_" + orderIdUnico;
 
         var itemsFormateados = (p.resumen || p.resumenPedido || "Sin detalle")
           .split(" | ")
           .map(function(it) { return "<div>• " + it + "</div>"; })
           .join("");
 
+        var horaLegible = limpiarHora(p.fecha);
+
         card.innerHTML = 
           '<div class="order-top">' +
             '<span class="mesa-tag">' + (p.mesa || "Mesa ?") + '</span>' +
-            '<span class="order-time">' + (p.fecha || p.orderId || "") + '</span>' +
+            '<span class="order-time">⏰ ' + horaLegible + '</span>' +
           '</div>' +
           '<div class="client-info">' +
             '<div><strong>Cliente:</strong> ' + (p.cliente || "Anónimo") + '</div>' +
@@ -241,22 +269,29 @@
           '<div class="order-items">' + itemsFormateados + '</div>' +
           '<div class="order-footer">' +
             '<span class="order-total">Total: $' + (p.total || 0) + ' MXN</span>' +
-            '<button class="btn-done" onclick="marcarListo(this)">✓ Entregado</button>' +
+            '<button class="btn-done" onclick="marcarListo(\'' + orderIdUnico + '\')">✓ Entregado</button>' +
           '</div>';
 
         grid.appendChild(card);
       });
     }
 
-    function marcarListo(btn) {
-      var card = btn.closest('.order-card');
-      card.style.opacity = '0.35';
-      card.style.borderColor = 'rgba(255,255,255,0.1)';
-      btn.innerText = "✓ Listo";
-      btn.disabled = true;
+    function marcarListo(orderId) {
+      comandasEntregadas[orderId] = true;
+      var card = document.getElementById("card_" + orderId);
+      if (card) {
+        card.style.transform = "scale(0.9)";
+        card.style.opacity = "0";
+        setTimeout(function() {
+          card.remove();
+          var restantes = document.querySelectorAll('.order-card');
+          if (restantes.length === 0) {
+            document.getElementById('pedidosGrid').innerHTML = '<div class="empty-msg">No hay comandas pendientes en este momento.</div>';
+          }
+        }, 300);
+      }
     }
 
-    // Auto-refresco cada 12 segundos
     setInterval(cargarComandas, 12000);
     cargarComandas();
   </script>
