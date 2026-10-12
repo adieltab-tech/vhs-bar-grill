@@ -722,7 +722,7 @@
                           "------------------------------\n" +
                           "💰 *TOTAL:* $" + totalPesos + " MXN";
 
-      var waUrl = "https://api.whatsapp.com/send?phone=" + WHATSAPP_BARRA + "&text=" + encodeURIComponent(textoWhatsApp);
+      var waUrl = "https://wa.me/" + WHATSAPP_BARRA + "?text=" + encodeURIComponent(textoWhatsApp);
 
       var fileInp = document.getElementById('cliFoto');
       if (fileInp.files && fileInp.files[0]) {
