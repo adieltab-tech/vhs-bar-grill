@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VHS BAR • Monitor de Comandas</title>
+  <style>
+    :root {
+      --neon: #00f2ff;
+      --bg: #030814;
+      --card-bg: rgba(5, 14, 28, 0.95);
+      --border: rgba(0, 242, 255, 0.35);
+      --text: #f0faff;
+      --text-muted: #8aa6b8;
+      --danger: #ff4d6d;
+      --ok: #00ffaa;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .title-box { display: flex; align-items: center; gap: 10px; }
+    .title-box h1 { font-size: 1.3rem; color: #fff; letter-spacing: 1px; }
+    .badge-live {
+      background: rgba(0, 255, 170, 0.2);
+      border: 1px solid var(--ok);
+      color: var(--ok);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .controls { display: flex; gap: 10px; align-items: center; }
+    .btn-action {
+      background: rgba(0, 242, 255, 0.15);
+      border: 1px solid var(--neon);
+      color: var(--neon);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .btn-action:hover { background: var(--neon); color: #000; }
+
+    .grid-orders {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .order-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .order-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding-bottom: 8px;
+    }
+
+    .mesa-tag {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: var(--neon);
+    }
+
+    .order-time { font-size: 0.75rem; color: var(--text-muted); }
+
+    .client-info {
+      font-size: 0.82rem;
+      color: #fff;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .order-items {
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed rgba(0, 242, 255, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      color: #e2f4ff;
+    }
+
+    .order-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 10px;
+    }
+
+    .order-total { font-size: 1rem; font-weight: bold; color: var(--ok); }
+
+    .btn-done {
+      background: rgba(0, 255, 170, 0.15);
+      border: 1px solid var(--ok);
+      color: var(--ok);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: bold;
+    }
+    .btn-done:hover { background: var(--ok); color: #000; }
+
+    .empty-msg {
+      text-align: center;
+      color: var(--text-muted);
+      grid-column: 1 / -1;
+      padding: 50px 0;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-box">
+      <h1>VHS BAR • MONITOR BARRA</h1>
+      <span class="badge-live">● EN VIVO</span>
+    </div>
+    <div class="controls">
+      <span id="lastCheck" style="font-size:0.75rem; color:var(--text-muted);">Actualizado: --:--</span>
+      <button class="btn-action" onclick="cargarComandas()">🔄 Refrescar</button>
+    </div>
+  </header>
+
+  <main class="grid-orders" id="pedidosGrid">
+    <div class="empty-msg">Esperando nuevas comandas...</div>
+  </main>
+
+  <script>
+    // Enlace a tu Web App de Google Apps Script (el mismo que procesa los pedidos)
+    var URL_APPS_SCRIPT = "https://script.google.com/macros/s/AKfycbxQUX7jFGctp62DWIBKmv4WoVzYevuwttfLSeYHNi70n8MheIUGFm5-qhj8Gs8kIvsqkA/exec";
+    var pedidosGuardados = [];
+
+    // Reproducir un tono beep cuando entre una comanda nueva
+    function reproducirAlerta() {
+      try {
+        var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = 880; // Tono A5
+        osc.type = "sine";
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (e) {
+        console.log("Audio no habilitado aún por interacción");
+      }
+    }
+
+    function cargarComandas() {
+      var d = new Date();
+      document.getElementById('lastCheck').innerText = "Actualizado: " + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      // Consulta GET al script de Google Sheets
+      fetch(URL_APPS_SCRIPT + "?action=getOrders")
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (Array.isArray(data)) {
+            if (data.length > pedidosGuardados.length && pedidosGuardados.length > 0) {
+              reproducirAlerta();
+            }
+            pedidosGuardados = data;
+            dibujarComandas(data);
+          }
+        })
+        .catch(function(err) {
+          console.log("Consultando o esperando datos...", err);
+        });
+    }
+
+    function dibujarComandas(pedidos) {
+      var grid = document.getElementById('pedidosGrid');
+      grid.innerHTML = "";
+
+      if (!pedidos || pedidos.length === 0) {
+        grid.innerHTML = '<div class="empty-msg">No hay comandas pendientes en este momento.</div>';
+        return;
+      }
+
+      pedidos.slice().reverse().forEach(function(p, idx) {
+        var card = document.createElement('div');
+        card.className = "order-card";
+
+        var itemsFormateados = (p.resumen || p.resumenPedido || "Sin detalle")
+          .split(" | ")
+          .map(function(it) { return "<div>• " + it + "</div>"; })
+          .join("");
+
+        card.innerHTML = 
+          '<div class="order-top">' +
+            '<span class="mesa-tag">' + (p.mesa || "Mesa ?") + '</span>' +
+            '<span class="order-time">' + (p.fecha || p.orderId || "") + '</span>' +
+          '</div>' +
+          '<div class="client-info">' +
+            '<div><strong>Cliente:</strong> ' + (p.cliente || "Anónimo") + '</div>' +
+            '<div><strong>WhatsApp:</strong> ' + (p.telefono || "N/A") + '</div>' +
+          '</div>' +
+          '<div class="order-items">' + itemsFormateados + '</div>' +
+          '<div class="order-footer">' +
+            '<span class="order-total">Total: $' + (p.total || 0) + ' MXN</span>' +
+            '<button class="btn-done" onclick="marcarListo(this)">✓ Entregado</button>' +
+          '</div>';
+
+        grid.appendChild(card);
+      });
+    }
+
+    function marcarListo(btn) {
+      var card = btn.closest('.order-card');
+      card.style.opacity = '0.35';
+      card.style.borderColor = 'rgba(255,255,255,0.1)';
+      btn.innerText = "✓ Listo";
+      btn.disabled = true;
+    }
+
+    // Auto-refresco cada 12 segundos
+    setInterval(cargarComandas, 12000);
+    cargarComandas();
+  </script>
+</body>
+</html>
